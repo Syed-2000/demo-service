@@ -12,6 +12,8 @@ public class User {
     private Integer age;
     private String status;
 
+    public User() {
+    }
     public User(Long id, String name, Integer age, String status) {
         this.id = id;
         this.name = name;

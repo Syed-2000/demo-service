@@ -1,5 +1,6 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.utils.ErrorMessages;
 import com.example.demo.dto.UserRequestDTO;
 import com.example.demo.dto.UserResponseDTO;
 import com.example.demo.entity.User;
@@ -29,53 +30,69 @@ public class UserServiceImpl implements UserService {
     @Override
     public Mono<UserResponseDTO> createUser(UserRequestDTO requestDTO) {
         if (requestDTO == null) {
-            return Mono.error(new IllegalArgumentException("User request must not be null"));
+            return Mono.error(new IllegalArgumentException(ErrorMessages.USER_REQUEST_NULL));
         }
+
         if (!StringUtils.hasText(requestDTO.status())) {
-            return Mono.error(new IllegalArgumentException("User status must not be blank"));
+            return Mono.error(new IllegalArgumentException(ErrorMessages.USER_STATUS_BLANK));
         }
+
         if (requestDTO.age() < 0) {
-            return Mono.error(new IllegalArgumentException("User age must be non-negative"));
+            return Mono.error(new IllegalArgumentException(ErrorMessages.USER_AGE_NEGATIVE));
         }
 
         User user = userMapper.toEntity(requestDTO);
         if (user == null) {
-            return Mono.error(new IllegalStateException("Mapping to User entity failed"));
+            return Mono.error(new IllegalStateException(ErrorMessages.USER_ENTITY_MAPPING_FAILED));
         }
 
         return userRepository.save(user)
-                .map(userMapper::toResponseDto)
-                .switchIfEmpty(Mono.error(new IllegalStateException("User creation failed")));
+                .map(savedUser -> {
+                    UserResponseDTO dto = userMapper.toResponseDto(savedUser);
+                    if (dto == null) {
+                        throw new IllegalStateException(ErrorMessages.USER_RESPONSE_MAPPING_FAILED);
+                    }
+                    return dto;
+                })
+                .switchIfEmpty(Mono.error(new IllegalStateException(ErrorMessages.USER_CREATION_FAILED)));
     }
 
     @Override
     public Mono<UserResponseDTO> getUserById(Long id) {
         if (id == null || id <= 0) {
-            return Mono.error(new IllegalArgumentException("User ID must be positive"));
+            return Mono.error(new IllegalArgumentException(ErrorMessages.USER_ID_INVALID));
         }
 
         return userRepository.findById(id)
-                .map(userMapper::toResponseDto)
-                .switchIfEmpty(Mono.error(new RuntimeException("User not found with ID: " + id)));
+                .map(user -> {
+                    UserResponseDTO dto = userMapper.toResponseDto(user);
+                    if (dto == null) {
+                        throw new IllegalStateException(ErrorMessages.USER_RESPONSE_MAPPING_FAILED);
+                    }
+                    return dto;
+                })
+                .switchIfEmpty(Mono.error(new RuntimeException(String.format(ErrorMessages.USER_NOT_FOUND, id))));
     }
 
     @Override
     public Flux<UserResponseDTO> getUsersByAgeAndStatus(int minAge, int maxAge, String status) {
         if (minAge < 0 || maxAge < 0) {
-            return Flux.error(new IllegalArgumentException("Age must be non-negative"));
+            return Flux.error(new IllegalArgumentException(ErrorMessages.AGE_NEGATIVE));
         }
+
         if (minAge > maxAge) {
-            return Flux.error(new IllegalArgumentException("minAge must be less than or equal to maxAge"));
+            return Flux.error(new IllegalArgumentException(ErrorMessages.AGE_RANGE_INVALID));
         }
+
         if (!StringUtils.hasText(status)) {
-            return Flux.error(new IllegalArgumentException("Status must not be blank"));
+            return Flux.error(new IllegalArgumentException(ErrorMessages.STATUS_BLANK));
         }
 
         return userRepository.findByAgeBetweenAndStatus(minAge, maxAge, status)
                 .map(user -> {
                     UserResponseDTO dto = userMapper.toResponseDto(user);
                     if (dto == null) {
-                        throw new IllegalStateException("User response mapping failed");
+                        throw new IllegalStateException(ErrorMessages.USER_RESPONSE_MAPPING_FAILED);
                     }
                     return dto;
                 });

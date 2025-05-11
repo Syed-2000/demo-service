@@ -27,8 +27,7 @@ public class UserController {
     @GetMapping("/{id}")
     public Mono<ResponseEntity<UserResponseDTO>> getUserById(@PathVariable Long id) {
         return userService.getUserById(id)
-                .map(ResponseEntity::ok)
-                .onErrorResume(ex -> Mono.just(ResponseEntity.notFound().build()));
+                .map(ResponseEntity::ok);
     }
 
     @GetMapping("/search")

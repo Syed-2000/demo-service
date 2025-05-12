@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dto.UserRequestDTO;
 import com.example.demo.dto.UserResponseDTO;
 import com.example.demo.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
@@ -19,7 +20,7 @@ public class UserController {
     }
 
     @PostMapping
-    public Mono<ResponseEntity<UserResponseDTO>> createUser(@RequestBody UserRequestDTO userRequestDTO) {
+    public Mono<ResponseEntity<UserResponseDTO>> createUser(@Valid @RequestBody UserRequestDTO userRequestDTO) {
         return userService.createUser(userRequestDTO)
                 .map(ResponseEntity::ok);
     }

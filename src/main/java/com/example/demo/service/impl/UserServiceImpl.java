@@ -33,19 +33,11 @@ public class UserServiceImpl implements UserService {
             return Mono.error(new IllegalArgumentException(ErrorMessages.USER_REQUEST_NULL));
         }
 
-        if (!StringUtils.hasText(requestDTO.status())) {
-            return Mono.error(new IllegalArgumentException(ErrorMessages.USER_STATUS_BLANK));
-        }
-
-        if (requestDTO.age() < 0) {
-            return Mono.error(new IllegalArgumentException(ErrorMessages.USER_AGE_NEGATIVE));
-        }
-
         User user = userMapper.toEntity(requestDTO);
         if (user == null) {
             return Mono.error(new IllegalStateException(ErrorMessages.USER_ENTITY_MAPPING_FAILED));
         }
-
+        log.info("Creating user: {}", user);
         return userRepository.save(user)
                 .map(savedUser -> {
                     UserResponseDTO dto = userMapper.toResponseDto(savedUser);
